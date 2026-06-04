@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>WIESPL · CRM & OT Quotation Builder</title>
+  <!-- External Resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+  <div class="brand-mark"><i class="fas fa-hospital-user"></i></div>
+  <h2>WIESPL CRM</h2>
+  <p>Enquiry & OT Quotation Builder</p>
+  <div class="form-group"><label>Username</label><input type="text" id="loginUsername" class="form-control" placeholder="admin" value="admin"></div>
+  <div class="form-group"><label>Password</label><input type="password" id="loginPassword" class="form-control" placeholder="••••••" value="wiespl2024"></div>
+  <button class="btn-primary" id="loginButton"><i class="fas fa-arrow-right-to-bracket"></i> Sign in</button>
+  <div class="error-message" id="loginError">Invalid credentials</div>
+  <p style="font-size:0.7rem; margin-top:1rem; color:#8899aa;">Demo: admin / wiespl2024</p>
+</div>
+
+<!-- MAIN APP CONTAINER -->
+<div class="app-container" id="appContainer">
+  <aside class="sidebar">
+    <div class="sidebar-header"><i class="fas fa-crosshairs"></i><span>WIESPL</span></div>
+    <nav>
+      <div class="nav-item active" data-page="dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></div>
+      <div class="nav-item" data-page="enquiries"><i class="fas fa-pen-to-square"></i><span>Enquiries</span></div>
+      <div class="nav-item" data-page="quotation"><i class="fas fa-file-invoice-dollar"></i><span>Quotation</span></div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-avatar">VS</div><span style="font-weight:500;">Vikram</span>
+      <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-right-from-bracket"></i></button>
+    </div>
+  </aside>
+
+  <div class="main-panel">
+    <header class="top-bar">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div>
+        <button class="btn-sm primary" id="newEnquiryBtn"><i class="fas fa-plus"></i> New Enquiry</button>
+        <button class="btn-sm primary" id="newQuotationBtn" style="margin-left:8px;"><i class="fas fa-file-invoice"></i> New Quotation</button>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="card"><h3 style="margin-bottom:1rem;"><i class="fas fa-inbox"></i> Recent Enquiries</h3>
+          <div class="table-wrapper"><table id="dashboardTable"><thead><tr><th>Hospital</th><th>City</th><th>OT Type</th><th>Value</th><th>Stage</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div style="display:flex; gap:1rem;"><div class="card" style="flex:1;"><strong id="totalCount">0</strong><br><small>Total Enquiries</small></div><div class="card" style="flex:1;"><strong id="activeCount">0</strong><br><small>Active</small></div></div>
+      </div>
+
+      <!-- ENQUIRIES PAGE -->
+      <div class="page" id="page-enquiries">
+        <div class="card"><h3 style="margin-bottom:1rem;">➕ Add Enquiry</h3>
+          <div class="form-row"><div class="form-field"><label>Hospital</label><input id="eHospital" placeholder="Apollo"></div><div class="form-field"><label>City</label><input id="eCity" placeholder="Mumbai"></div><div class="form-field"><label>Contact</label><input id="eContact" placeholder="Dr. Sharma"></div></div>
+          <div class="form-row"><div class="form-field"><label>OT Type</label><select id="eOtType"><option>Modular OT</option><option>ICU</option><option>Cath Lab</option></select></div><div class="form-field"><label>Value (₹)</label><input id="eValue" type="number" placeholder="500000"></div><div class="form-field"><label>Stage</label><select id="eStage"><option>New</option><option>Quoted</option><option>Won</option></select></div></div>
+          <button class="btn-sm primary" id="saveEnquiryBtn"><i class="fas fa-save"></i> Save</button>
+        </div>
+        <div class="card"><h3>📋 All Enquiries</h3><div class="table-wrapper"><table id="enquiriesTable"><thead><tr><th>Hospital</th><th>City</th><th>Contact</th><th>OT Type</th><th>Value</th><th>Stage</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+
+      <!-- QUOTATION PAGE (FULL BUILDER) -->
+      <div class="page" id="page-quotation">
+        <div class="quot-builder">
+          <!-- Progress Steps -->
+          <div class="progress-steps">
+            <div class="step active" data-step="1" onclick="QuotationApp.goToStep(1)"><div class="step-number">1</div><div class="step-label">🏥 Basic Information</div></div>
+            <div class="step" data-step="2" onclick="QuotationApp.goToStep(2)"><div class="step-number">2</div><div class="step-label">🔧 OT Selection</div></div>
+            <div class="step" data-step="3" onclick="QuotationApp.goToStep(3)"><div class="step-number">3</div><div class="step-label">📐 OT Configuration</div></div>
+            <div class="step" data-step="4" onclick="QuotationApp.goToStep(4)"><div class="step-number">4</div><div class="step-label">🌡️ Heat Load & HVAC</div></div>
+            <div class="step" data-step="5" onclick="QuotationApp.goToStep(5)"><div class="step-number">5</div><div class="step-label">📊 Review & Summary</div></div>
+          </div>
+
+          <!-- STEP 1: BASIC INFO -->
+          <div id="quot-step-1" class="quot-step active">
+            <div class="qcard"><div class="qcard-header"><h3>🏥 Hospital & Project Information</h3></div><div class="qcard-body">
+              <div class="qform-section"><div class="qsection-title">📍 Basic Details</div><div class="qform-grid">
+                <div class="qform-group"><label>Hospital Name <span class="required">*</span></label><input type="text" id="hospital_name" class="qform-control" placeholder="e.g., Apollo Hospitals"></div>
+                <div class="qform-group"><label>City <span class="required">*</span></label><input type="text" id="city" class="qform-control" placeholder="e.g., Mumbai"></div>
+                <div class="qform-group"><label>Doctor Name <span class="required">*</span></label><input type="text" id="doctor_name" class="qform-control" placeholder="e.g., Dr. Sharma"></div>
+                <div class="qform-group"><label>Contact Number</label><input type="tel" id="contact_number" class="qform-control" placeholder="Phone number"></div>
+              </div></div>
+              <div class="qform-section"><div class="qsection-title">🗺️ Location Coordinates</div><div class="qform-grid">
+                <div class="qform-group"><label>Longitude</label><input type="text" id="longitude" class="qform-control" placeholder="e.g., 72.8777" value="72.8777"></div>
+                <div class="qform-group"><label>Latitude</label><input type="text" id="latitude" class="qform-control" placeholder="e.g., 19.0760" value="19.0760"></div>
+                <div class="qform-group"><label>Elevation (meters)</label><input type="text" id="elevation" class="qform-control" placeholder="e.g., 14" value="14"></div>
+                <div class="qform-group"><button class="qbtn qbtn-primary" onclick="QuotationApp.fetchWeatherData()" style="margin-top:24px;">🌤️ Fetch Weather Data</button></div>
+              </div><div id="weather-info" class="weather-card" style="display:none;"></div></div>
+              <div class="qform-section"><div class="qsection-title">🏥 OT Types Required</div><div class="qform-grid">
+                <div class="qform-group"><label>Modular OT</label><input type="number" id="modular_ot" class="qform-control" min="0" value="1"></div>
+                <div class="qform-group"><label>IVF Lab</label><input type="number" id="ivf_lab" class="qform-control" min="0" value="0"></div>
+                <div class="qform-group"><label>IVF OT</label><input type="number" id="ivf_ot" class="qform-control" min="0" value="0"></div>
+                <div class="qform-group"><label>Cath Lab</label><input type="number" id="cath_lab" class="qform-control" min="0" value="0"></div>
+                <div class="qform-group"><label>NICU</label><input type="number" id="nicu" class="qform-control" min="0" value="0"></div>
+                <div class="qform-group"><label>ICU</label><input type="number" id="icu" class="qform-control" min="0" value="0"></div>
+                <div class="qform-group"><label>OT Passage</label><input type="number" id="ot_passage" class="qform-control" min="0" value="0"></div>
+                <div class="qform-group"><label>Other Type</label><input type="text" id="other_type" class="qform-control" placeholder="Specify"></div>
+                <div class="qform-group"><label>Other Count</label><input type="number" id="other_count" class="qform-control" min="0" value="0"></div>
+              </div></div>
+            </div></div>
+            <div class="qnavigation"><div></div><div class="qnav-buttons"><button class="qbtn qbtn-primary" onclick="QuotationApp.nextStep(2)">Next: OT Selection →</button></div></div>
+          </div>
+
+          <!-- STEP 2: OT SELECTION -->
+          <div id="quot-step-2" class="quot-step">
+            <div class="qcard"><div class="qcard-header"><h3>🔧 Select OT to Configure</h3></div><div class="qcard-body">
+              <div class="qinfo-box"><span class="label">Total OTs to Configure:</span><span id="total-ots-count">0</span></div>
+              <div class="ot-list" id="ot-list-container"></div>
+            </div></div>
+            <div class="qnavigation"><button class="qbtn qbtn-secondary" onclick="QuotationApp.prevStep(1)">← Back: Basic Information</button><div class="qnav-buttons"><button class="qbtn qbtn-primary" onclick="QuotationApp.nextStep(3)">Next: Configure Selected OT →</button></div></div>
+          </div>
+
+          <!-- STEP 3: OT CONFIGURATION -->
+          <div id="quot-step-3" class="quot-step">
+            <div class="qcard"><div class="qcard-header"><h3>📐 OT Configuration - <span id="current-ot-name">Select an OT</span></h3></div><div class="qcard-body">
+              <div class="qform-section"><div class="qsection-title">🎯 OT Classification</div><div class="qform-grid">
+                <div class="qform-group"><label>OT Type</label><select id="ot_type_select" class="qform-control"><option>Modular OT</option><option>IVF Lab</option><option>IVF OT</option><option>Cath Lab</option><option>NICU</option><option>ICU</option><option>OT Passage</option></select></div>
+                <div class="qform-group"><label>OT Configuration</label><select id="ot_config" class="qform-control"><option>Full</option><option>Semi</option><option>Basic</option></select></div>
+                <div class="qform-group"><label>Panel Type</label><select id="panel_type" class="qform-control"><option>SS</option><option>PPGL</option><option>GI</option></select></div>
+                <div class="qform-group"><label>USP Basis</label><select id="usp_basis" class="qform-control"><option>Class 100</option><option>Class 1000</option><option>Class 10000</option></select></div>
+              </div></div>
+              <div class="qform-section"><div class="qsection-title">📏 OT Dimensions</div><div class="qform-grid">
+                <div class="qform-group"><label>Length (ft)</label><input type="number" id="ot_length" class="qform-control" value="20" step="0.1" oninput="QuotationApp.updateArea()"></div>
+                <div class="qform-group"><label>Width (ft)</label><input type="number" id="ot_width" class="qform-control" value="20" step="0.1" oninput="QuotationApp.updateArea()"></div>
+                <div class="qform-group"><label>Height (ft)</label><input type="number" id="ot_height" class="qform-control" value="10" step="0.1" oninput="QuotationApp.updateACH()"></div>
+                <div class="qform-group"><label>Area (sq.ft)</label><input type="text" id="ot_area" class="qform-control" disabled></div>
+              </div></div>
+              <div class="qform-section"><div class="qsection-title">🏗️ Flooring & Ceiling</div><div class="qform-grid">
+                <div class="qform-group"><label>Flooring Type</label><select id="flooring_type" class="qform-control"><option>Antistatic Vinyl</option><option>Epoxy</option><option>PVC</option><option>Conductive Vinyl</option></select></div>
+                <div class="qform-group"><label>Ceiling Type</label><select id="ceiling_type" class="qform-control"><option>Modular PPGL</option><option>Modular SS</option><option>GI Powder Coated</option></select></div>
+                <div class="qform-group"><label>Ceiling Above Area Condition</label><select id="ceiling_above" class="qform-control"><option>Conditioned</option><option>Unconditioned</option><option>Partially Conditioned</option></select></div>
+                <div class="qform-group"><label>Self-Leveling Required</label><select id="self_leveling" class="qform-control"><option>Yes</option><option>No</option></select></div>
+              </div></div>
+              <div class="qform-section"><div class="qsection-title">🔌 Pendants & Equipment</div><div class="qform-grid">
+                <div class="qform-group"><label>Anaesthesia Pendant</label><select id="anaesthesia_pendant" class="qform-control"><option>None</option><option>Single Arm</option><option>Double Arm</option></select></div>
+                <div class="qform-group"><label>Surgeon Pendant</label><select id="surgeon_pendant" class="qform-control"><option>None</option><option>Single Arm</option><option>Double Arm</option></select></div>
+                <div class="qform-group"><label>Pass Box</label><input type="number" id="pass_box" class="qform-control" value="1"></div>
+                <div class="qform-group"><label>Storage Cabinet</label><input type="number" id="storage_cabinet" class="qform-control" value="2"></div>
+              </div></div>
+              <div class="qform-section"><div class="qsection-title">💡 Lighting</div><div class="qform-grid">
+                <div class="qform-group"><label>Peripheral Lights</label><input type="number" id="peripheral_lights" class="qform-control" value="8"></div>
+                <div class="qform-group"><label>X-Ray Viewer</label><input type="number" id="xray_viewer" class="qform-control" value="1"></div>
+                <div class="qform-group"><label>Magnetic Writing Board</label><input type="number" id="writing_board" class="qform-control" value="1"></div>
+              </div></div>
+              <div class="qnavigation" style="border-top:none;padding-top:0;"><button class="qbtn qbtn-secondary" onclick="QuotationApp.prevStep(2)">← Back: OT Selection</button><div class="qnav-buttons"><button class="qbtn qbtn-outline" onclick="QuotationApp.saveOTConfig()">💾 Save OT Config</button><button class="qbtn qbtn-primary" onclick="QuotationApp.nextStep(4)">Next: Heat Load & HVAC →</button></div></div>
+            </div></div>
+          </div>
+
+          <!-- STEP 4: HEAT LOAD & HVAC -->
+          <div id="quot-step-4" class="quot-step">
+            <div class="qcard"><div class="qcard-header"><h3>🌡️ Heat Load Calculation & HVAC Configuration</h3></div><div class="qcard-body">
+              <div class="qform-section"><div class="qsection-title">📊 Input Conditions</div><div class="qform-grid">
+                <div class="qform-group"><label>Outside Temp (°C)</label><input type="number" id="outside_temp" class="qform-control" value="35"></div>
+                <div class="qform-group"><label>Outside Humidity (%)</label><input type="number" id="outside_humidity" class="qform-control" value="60"></div>
+                <div class="qform-group"><label>Inside Temp (°C)</label><input type="number" id="inside_temp" class="qform-control" value="21"></div>
+                <div class="qform-group"><label>Inside Humidity (%)</label><input type="number" id="inside_humidity" class="qform-control" value="50"></div>
+              </div><button class="qbtn qbtn-primary" onclick="QuotationApp.calculateHeatLoad()" style="margin-top:15px;">🔄 Calculate Heat Load</button></div>
+              <div class="qform-section"><div class="qsection-title">🔥 Internal Heat Load</div><div class="qform-grid">
+                <div class="qform-group"><label>Number of Persons</label><input type="number" id="persons_count" class="qform-control" value="6"></div>
+                <div class="qform-group"><label>Equipment Load (kW)</label><input type="number" id="equipment_load" class="qform-control" value="2" step="0.1"></div>
+                <div class="qform-group"><label>Lighting Load (W/sq.ft)</label><input type="number" id="lighting_load" class="qform-control" value="0.3" step="0.1"></div>
+                <div class="qform-group"><label>Calculated Total Load (TR)</label><input type="text" id="calculated_tr" class="qform-control" disabled></div>
+              </div></div>
+              <div class="qform-section"><div class="qsection-title">❄️ HVAC System</div><div class="qform-grid">
+                <div class="qform-group"><label>HEPA Position</label><select id="hepa_position" class="qform-control"><option>Terminal</option><option>In AHU</option></select></div>
+                <div class="qform-group"><label>Plenum Type</label><select id="plenum_type" class="qform-control"><option>LAF 10x10</option><option>LAF 8x6</option><option>LAF 6x6</option><option>No LAF</option></select></div>
+                <div class="qform-group"><label>CFM Value</label><input type="number" id="cfm_value" class="qform-control" value="3000" oninput="QuotationApp.updateACH()"></div>
+                <div class="qform-group"><label>Air Changes per Hour</label><input type="text" id="ach_calculated" class="qform-control" disabled></div>
+              </div></div>
+              <div class="qform-section"><div class="qsection-title">🔧 Ducting & AHU</div><div class="qform-grid">
+                <div class="qform-group"><label>Ducting Type</label><select id="ducting_type" class="qform-control"><option>Aluminum</option><option>GI</option><option>SS</option><option>PI</option></select></div>
+                <div class="qform-group"><label>Ducting Quantity (Sq.Ft)</label><input type="number" id="ducting_qty" class="qform-control" value="1500"></div>
+                <div class="qform-group"><label>AHU Skin Thickness</label><select id="ahu_skin" class="qform-control"><option>25mm</option><option>45mm</option></select></div>
+                <div class="qform-group"><label>Static Pressure (mm WG)</label><input type="text" id="static_pressure" class="qform-control" value="100"></div>
+                <div class="qform-group"><label>Motor Type</label><select id="motor_type" class="qform-control"><option>Standard</option><option>IE2</option><option>IE3</option><option>IE4</option></select></div>
+                <div class="qform-group"><label>Fire Damper</label><select id="fire_damper" class="qform-control"><option>Yes</option><option>No</option></select></div>
+              </div></div>
+              <div class="qform-section"><div class="qsection-title">📱 Smart Controls</div><div class="qform-grid">
+                <div class="qform-group"><label>iSmart Device</label><select id="ismart_device" class="qform-control"><option>Yes</option><option>No</option></select></div>
+                <div class="qform-group"><label>Touch Panel (32")</label><select id="touch_panel" class="qform-control"><option>Yes</option><option>No</option></select></div>
+                <div class="qform-group"><label>Outside Panel (10")</label><select id="outside_panel" class="qform-control"><option>Yes</option><option>No</option></select></div>
+                <div class="qform-group"><label>SHRM System</label><select id="shrm_system" class="qform-control"><option>Yes</option><option>No</option></select></div>
+              </div></div>
+              <div class="qnavigation" style="border-top:none;padding-top:0;"><button class="qbtn qbtn-secondary" onclick="QuotationApp.prevStep(3)">← Back: OT Configuration</button><div class="qnav-buttons"><button class="qbtn qbtn-outline" onclick="QuotationApp.saveHVACConfig()">💾 Save HVAC Config</button><button class="qbtn qbtn-primary" onclick="QuotationApp.nextStep(5)">Next: Review & Summary →</button></div></div>
+            </div></div>
+          </div>
+
+          <!-- STEP 5: REVIEW & SUMMARY -->
+          <div id="quot-step-5" class="quot-step">
+            <div class="qcard"><div class="qcard-header"><h3>📊 Configuration Summary</h3></div><div class="qcard-body">
+              <div class="qform-section"><div class="qsection-title">📋 Configured OTs</div><div class="table-responsive"><table class="qtable" id="configured-ots-table"><thead><tr><th>OT Name</th><th>Type</th><th>Config</th><th>Dimensions</th><th>CFM</th><th>Cost</th></tr></thead><tbody id="configured-ots-tbody"></tbody></table></div></div>
+              <div class="qform-section"><div class="qsection-title">💰 Financial Summary</div><div class="summary-grid"><div class="summary-item"><div class="label">Total OTs</div><div class="value" id="summary-total-ots">0</div></div><div class="summary-item"><div class="label">Basic Total</div><div class="value" id="summary-basic-cost">₹0</div></div><div class="summary-item"><div class="label">Installation & Labor</div><div class="value" id="summary-installation">₹0</div></div><div class="summary-item"><div class="label">Transport</div><div class="value" id="summary-transport">₹0</div></div><div class="summary-item"><div class="label">Subtotal</div><div class="value" id="summary-subtotal">₹0</div></div><div class="summary-item"><div class="label">GST (18%)</div><div class="value" id="summary-gst">₹0</div></div><div class="summary-item"><div class="label">Grand Total</div><div class="value" id="summary-grand-total" style="color:#28a745;">₹0</div></div></div></div>
+              <div class="qform-section"><div class="qsection-title">🔬 Project Technical Summary</div><div class="summary-grid" id="tech-summary"></div></div>
+            </div></div>
+            <div class="qnavigation"><button class="qbtn qbtn-secondary" onclick="QuotationApp.prevStep(4)">← Back: Heat Load & HVAC</button><div class="qnav-buttons"><button class="qbtn qbtn-outline" onclick="window.print()">🖨️ Print Summary</button><button class="qbtn qbtn-outline" onclick="QuotationApp.exportToExcel()">📊 Export Excel</button><button class="qbtn qbtn-success" onclick="QuotationApp.generateQuotation()">📄 Generate PDF Quotation →</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="script.js"></script>
+</body>
+</html>

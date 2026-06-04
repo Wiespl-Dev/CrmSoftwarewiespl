@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>WIESPL · CRM & OT Quotation Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Outfit', sans-serif; background: #f4f7fc; color: #1a1a2e; height: 100vh; display: flex; align-items: center; justify-content: center; }
+    
+    .login-screen { background: white; padding: 2.5rem 2rem; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); width: 400px; max-width: 90%; text-align: center; }
+    .login-screen h2 { font-weight: 700; font-size: 1.8rem; margin-bottom: 0.3rem; color: #0f3b5c; }
+    .login-screen p { color: #5e6f7d; margin-bottom: 2rem; }
+    .brand-mark { background: #0f3b5c; width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: white; font-size: 1.8rem; }
+    .form-group { margin-bottom: 1.2rem; text-align: left; }
+    .form-group label { font-weight: 600; font-size: 0.85rem; color: #2c3e50; display: block; margin-bottom: 0.3rem; }
+    .form-control { width: 100%; padding: 12px 16px; border: 1.5px solid #e0e7ef; border-radius: 14px; font-size: 1rem; outline: none; transition: 0.2s; background: #f9fbfd; }
+    .form-control:focus { border-color: #0f3b5c; background: white; }
+    .btn-primary { background: #0f3b5c; color: white; border: none; padding: 12px 20px; border-radius: 14px; font-weight: 600; font-size: 1rem; width: 100%; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-primary:hover { background: #1a4e6e; }
+    .error-message { color: #c0392b; font-size: 0.85rem; margin-top: 0.8rem; display: none; }
+
+    .app-container { display: none; width: 100%; height: 100vh; background: #f5f7fb; }
+    .app-container.active { display: flex; }
+    
+    .sidebar { width: 260px; background: white; border-right: 1px solid #e9edf4; display: flex; flex-direction: column; padding: 1.5rem 1rem; box-shadow: 2px 0 10px rgba(0,0,0,0.02); }
+    .sidebar-header { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
+    .sidebar-header i { font-size: 1.8rem; color: #0f3b5c; }
+    .sidebar-header span { font-weight: 700; font-size: 1.2rem; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 12px; border-radius: 12px; color: #4a5c6c; font-weight: 500; margin-bottom: 6px; cursor: pointer; transition: 0.15s; }
+    .nav-item i { width: 22px; font-size: 1.1rem; }
+    .nav-item.active { background: #eef3ff; color: #0f3b5c; font-weight: 600; }
+    .nav-item:hover { background: #f0f4fa; }
+    .sidebar-footer { margin-top: auto; border-top: 1px solid #e9edf4; padding-top: 1.2rem; display: flex; align-items: center; gap: 10px; }
+    .user-avatar { background: #0f3b5c; color: white; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+    .logout-btn { margin-left: auto; background: none; border: none; color: #7f8c8d; cursor: pointer; padding: 8px; border-radius: 8px; }
+    .logout-btn:hover { background: #f0f0f0; }
+
+    .main-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .top-bar { background: white; padding: 1rem 2rem; border-bottom: 1px solid #e9edf4; display: flex; align-items: center; justify-content: space-between; }
+    .top-bar h1 { font-size: 1.5rem; font-weight: 600; color: #0a1e2c; }
+    .content-area { flex: 1; padding: 1.8rem 2rem; overflow-y: auto; }
+    
+    .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 8px 20px rgba(0,0,0,0.02); margin-bottom: 1.5rem; }
+    .table-wrapper { overflow-x: auto; margin-top: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 12px 8px; font-weight: 600; color: #475569; font-size: 0.8rem; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+    .badge { background: #eef2ff; color: #0f3b5c; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .btn-sm { background: white; border: 1px solid #dce3eb; padding: 6px 14px; border-radius: 10px; font-weight: 500; cursor: pointer; }
+    .btn-sm.primary { background: #0f3b5c; color: white; border: none; }
+    
+    .page { display: none; }
+    .page.active { display: block; }
+    
+    .form-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .form-field { flex: 1; min-width: 200px; }
+    .form-field label { font-weight: 500; font-size: 0.8rem; display: block; margin-bottom: 4px; }
+    .form-field input, .form-field select { width: 100%; padding: 10px 14px; border: 1px solid #dce3eb; border-radius: 10px; background: #fafbfc; }
+    
+    /* Full Quotation Builder Styles */
+    .quot-builder { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a2e; line-height: 1.6; }
+    .quot-builder .progress-steps { display: flex; justify-content: space-between; margin-bottom: 24px; background: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .quot-builder .step { flex: 1; text-align: center; position: relative; cursor: pointer; }
+    .quot-builder .step:not(:last-child):after { content: '→'; position: absolute; right: -5px; top: 14px; color: #ccc; font-size: 18px; }
+    .quot-builder .step-number { display: inline-block; width: 34px; height: 34px; background: #e0e0e0; border-radius: 50%; text-align: center; line-height: 34px; font-weight: 600; margin-bottom: 6px; transition: all 0.3s; }
+    .quot-builder .step.active .step-number { background: #0f3b5c; color: white; }
+    .quot-builder .step.completed .step-number { background: #28a745; color: white; }
+    .quot-builder .step-label { font-size: 12px; font-weight: 500; color: #666; }
+    .quot-builder .step.active .step-label { color: #0f3b5c; font-weight: 600; }
+    .quot-builder .step.completed .step-label { color: #28a745; }
+    .quot-builder .quot-step { display: none; }
+    .quot-builder .quot-step.active { display: block; }
+    .quot-builder .qcard { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; overflow: hidden; }
+    .quot-builder .qcard-header { padding: 16px 20px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+    .quot-builder .qcard-header h3 { font-size: 16px; color: #1a1a2e; display: flex; align-items: center; gap: 10px; margin: 0; }
+    .quot-builder .qcard-body { padding: 20px; }
+    .quot-builder .qform-section { margin-bottom: 24px; }
+    .quot-builder .qsection-title { font-size: 14px; font-weight: 600; color: #0f3b5c; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; }
+    .quot-builder .qform-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .quot-builder .qform-group { display: flex; flex-direction: column; gap: 5px; }
+    .quot-builder .qform-group label { font-weight: 500; color: #495057; font-size: 13px; }
+    .quot-builder .required { color: #dc3545; margin-left: 2px; }
+    .quot-builder .qform-control { padding: 9px 12px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 14px; transition: all 0.2s; background: white; }
+    .quot-builder .qform-control:focus { outline: none; border-color: #0f3b5c; box-shadow: 0 0 0 3px rgba(15,59,92,0.1); }
+    .quot-builder .qform-control:disabled { background: #f8f9fa; color: #6c757d; }
+    .quot-builder select.qform-control { cursor: pointer; }
+    .quot-builder textarea.qform-control { resize: vertical; min-height: 70px; }
+    .quot-builder .ot-list { display: flex; flex-direction: column; gap: 10px; }
+    .quot-builder .ot-item { display: flex; align-items: center; padding: 14px 16px; background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+    .quot-builder .ot-item:hover { border-color: #0f3b5c; background: #f0f7ff; }
+    .quot-builder .ot-item.selected { border-color: #0f3b5c; background: #e6f0ff; }
+    .quot-builder .ot-item input[type="radio"] { width: 18px; height: 18px; margin-right: 14px; flex-shrink: 0; }
+    .quot-builder .ot-info { flex: 1; }
+    .quot-builder .ot-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+    .quot-builder .ot-details { font-size: 12px; color: #666; }
+    .quot-builder .ot-status { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .quot-builder .ot-status.pending { background: #fff3cd; color: #856404; }
+    .quot-builder .ot-status.configured { background: #d4edda; color: #155724; }
+    .quot-builder .qinfo-box { background: #e6f0ff; border-left: 4px solid #0f3b5c; padding: 14px 18px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .quot-builder .qinfo-box .label { font-weight: 600; color: #0f3b5c; margin-right: 6px; }
+    .quot-builder .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-top: 16px; }
+    .quot-builder .summary-item { background: #f8f9fa; padding: 14px; border-radius: 8px; }
+    .quot-builder .summary-item .label { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .quot-builder .summary-item .value { font-size: 18px; font-weight: 700; color: #0f3b5c; }
+    .quot-builder .qbtn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all 0.2s; }
+    .quot-builder .qbtn-primary { background: #0f3b5c; color: white; }
+    .quot-builder .qbtn-primary:hover { background: #0a2e47; }
+    .quot-builder .qbtn-success { background: #28a745; color: white; }
+    .quot-builder .qbtn-success:hover { background: #218838; }
+    .quot-builder .qbtn-secondary { background: #6c757d; color: white; }
+    .quot-builder .qbtn-secondary:hover { background: #545b62; }
+    .quot-builder .qbtn-outline { background: transparent; border: 2px solid #0f3b5c; color: #0f3b5c; }
+    .quot-builder .qbtn-outline:hover { background: #0f3b5c; color: white; }
+    .quot-builder .qnavigation { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid #e9ecef; }
+    .quot-builder .qnav-buttons { display: flex; gap: 10px; }
+    .quot-builder .table-responsive { overflow-x: auto; }
+    .quot-builder .qtable { width: 100%; border-collapse: collapse; }
+    .quot-builder .qtable th { background: #f8f9fa; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 13px; border-bottom: 2px solid #0f3b5c; }
+    .quot-builder .qtable td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; font-size: 13px; }
+    .quot-builder .weather-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 20px; border-radius: 10px; margin-top: 12px; }
+    .quot-builder .weather-card .temp { font-size: 28px; font-weight: 700; }
+    .quot-builder .weather-card .condition { font-size: 13px; opacity: 0.9; }
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; }
+    .toast { background: white; padding: 14px 18px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin-top: 10px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease; border-left: 4px solid #28a745; }
+    .toast.error { border-left-color: #dc3545; }
+    .toast.info { border-left-color: #0f3b5c; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    
+    @media (max-width: 768px) {
+      .sidebar { width: 80px; }
+      .sidebar .nav-item span, .sidebar-header span, .sidebar-footer span { display: none; }
+      .sidebar .nav-item { justify-content: center; }
+      .quot-builder .progress-steps { flex-direction: column; gap: 12px; }
+      .quot-builder .step:not(:last-child):after { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-screen">
+  <div class="brand-mark"><i class="fas fa-hospital-user"></i></div>
+  <h2>WIESPL CRM</h2>
+  <p>Enquiry & OT Quotation Builder</p>
+  <div class="form-group"><label>Username</label><input type="text" id="loginUsername" class="form-control" placeholder="admin" value="admin"></div>
+  <div class="form-group"><label>Password</label><input type="password" id="loginPassword" class="form-control" placeholder="••••••" value="wiespl2024"></div>
+  <button class="btn-primary" id="loginButton"><i class="fas fa-arrow-right-to-bracket"></i> Sign in</button>
+  <div class="error-message" id="loginError">Invalid credentials</div>
+  <p style="font-size:0.7rem; margin-top:1rem; color:#8899aa;">Demo: admin / wiespl2024</p>
+</div>
+
+<div class="app-container" id="appContainer">
+  <aside class="sidebar">
+    <div class="sidebar-header"><i class="fas fa-crosshairs"></i><span>WIESPL</span></div>
+    <nav>
+      <div class="nav-item active" data-page="dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></div>
+      <div class="nav-item" data-page="enquiries"><i class="fas fa-pen-to-square"></i><span>Enquiries</span></div>
+      <div class="nav-item" data-page="quotation"><i class="fas fa-file-invoice-dollar"></i><span>Quotation</span></div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-avatar">VS</div><span style="font-weight:500;">Vikram</span>
+      <button class="logout-btn" id="logoutBtn" title="Logout"><i class="fas fa-right-from-bracket"></i></button>
+    </div>
+  </aside>
+
+  <div class="main-panel">
+    <header class="top-bar">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div>
+        <button class="btn-sm primary" id="newEnquiryBtn"><i class="fas fa-plus"></i> New Enquiry</button>
+        <button class="btn-sm primary" id="newQuotationBtn" style="margin-left:8px;"><i class="fas fa-file-invoice"></i> New Quotation</button>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="card"><h3 style="margin-bottom:1rem;"><i class="fas fa-inbox"></i> Recent Enquiries</h3>
+          <div class="table-wrapper"><table id="dashboardTable"><thead><tr><th>Hospital</th><th>City</th><th>OT Type</th><th>Value</th><th>Stage</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div style="display:flex; gap:1rem;"><div class="card" style="flex:1;"><strong id="totalCount">0</strong><br><small>Total Enquiries</small></div><div class="card" style="flex:1;"><strong id="activeCount">0</strong><br><small>Active</small></div></div>
+      </div>
+
+      <!-- ENQUIRIES PAGE -->
+      <div class="page" id="page-enquiries">
+        <div class="card"><h3 style="margin-bottom:1rem;">➕ Add Enquiry</h3>
+          <div class="form-row"><div class="form-field"><label>Hospital</label><input id="eHospital" placeholder="Apollo"></div><div class="form-field"><label>City</label><input id="eCity" placeholder="Mumbai"></div><div class="form-field"><label>Contact</label><input id="eContact" placeholder="Dr. Sharma"></div></div>
+          <div class="form-row"><div class="form-field"><label>OT Type</label><select id="eOtType"><option>Modular OT</option><option>ICU</option><option>Cath Lab</option></select></div><div class="form-field"><label>Value (₹)</label><input id="eValue" type="number" placeholder="500000"></div><div class="form-field"><label>Stage</label><select id="eStage"><option>New</option><option>Quoted</option><option>Won</option></select></div></div>
+          <button class="btn-sm primary" id="saveEnquiryBtn"><i class="fas fa-save"></i> Save</button>
+        </div>
+        <div class="card"><h3>📋 All Enquiries</h3><div class="table-wrapper"><table id="enquiriesTable"><thead><tr><th>Hospital</th><th>City</th><th>Contact</th><th>OT Type</th><th>Value</th><th>Stage</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+
+      <!-- QUOTATION PAGE (FULL DETAILED BUILDER) -->
+      <div class="page" id="page-quotation">
+        <div class="quot-builder">
+          <!-- Progress Steps -->
+          <div class="progress-steps">
+            <div class="step active" data-step="1" onclick="QuotationApp.goToStep(1)"><div class="step-number">1</div><div class="step-label">🏥 Basic Information</div></div>
+            <div class="step" data-step="2" onclick="QuotationApp.goToStep(2)"><div class="step-number">2</div><div class="step-label">🔧 OT Selection</div></div>
+            <div class="step" data-step="3" onclick="QuotationApp.goToStep(3)"><div class="step-number">3</div><div class="step-label">📐 OT Configuration</div></div>
+            <div class="step" data-step="4" onclick="QuotationApp.goToStep(4)"><div class="step-number">4</div><div class="step-label">🌡️ Heat Load & HVAC</div></div>
+            <div class="step" data-step="5" onclick="QuotationApp.goToStep(5)"><div class="step-number">5</div><div class="step-label">📊 Review & Summary</div></div>
+          </div>
+
+          <!-- STEP 1: BASIC INFORMATION -->
+          <div id="quot-step-1" class="quot-step active">
+            <div class="qcard">
+              <div class="qcard-header"><h3>🏥 Hospital & Project Information</h3></div>
+              <div class="qcard-body">
+                <div class="qform-section">
+                  <div class="qsection-title">📍 Basic Details</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Hospital Name <span class="required">*</span></label><input type="text" id="hospital_name" class="qform-control" placeholder="e.g., Apollo Hospitals"></div>
+                    <div class="qform-group"><label>City <span class="required">*</span></label><input type="text" id="city" class="qform-control" placeholder="e.g., Mumbai"></div>
+                    <div class="qform-group"><label>Doctor Name <span class="required">*</span></label><input type="text" id="doctor_name" class="qform-control" placeholder="e.g., Dr. Sharma"></div>
+                    <div class="qform-group"><label>Contact Number</label><input type="tel" id="contact_number" class="qform-control" placeholder="Phone number"></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">🗺️ Location Coordinates</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Longitude</label><input type="text" id="longitude" class="qform-control" placeholder="e.g., 72.8777" value="72.8777"></div>
+                    <div class="qform-group"><label>Latitude</label><input type="text" id="latitude" class="qform-control" placeholder="e.g., 19.0760" value="19.0760"></div>
+                    <div class="qform-group"><label>Elevation (meters)</label><input type="text" id="elevation" class="qform-control" placeholder="e.g., 14" value="14"></div>
+                    <div class="qform-group"><button class="qbtn qbtn-primary" onclick="QuotationApp.fetchWeatherData()" style="margin-top:24px;">🌤️ Fetch Weather Data</button></div>
+                  </div>
+                  <div id="weather-info" class="weather-card" style="display:none;"></div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">🏥 OT Types Required</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Modular OT</label><input type="number" id="modular_ot" class="qform-control" min="0" value="1"></div>
+                    <div class="qform-group"><label>IVF Lab</label><input type="number" id="ivf_lab" class="qform-control" min="0" value="0"></div>
+                    <div class="qform-group"><label>IVF OT</label><input type="number" id="ivf_ot" class="qform-control" min="0" value="0"></div>
+                    <div class="qform-group"><label>Cath Lab</label><input type="number" id="cath_lab" class="qform-control" min="0" value="0"></div>
+                    <div class="qform-group"><label>NICU</label><input type="number" id="nicu" class="qform-control" min="0" value="0"></div>
+                    <div class="qform-group"><label>ICU</label><input type="number" id="icu" class="qform-control" min="0" value="0"></div>
+                    <div class="qform-group"><label>OT Passage</label><input type="number" id="ot_passage" class="qform-control" min="0" value="0"></div>
+                    <div class="qform-group"><label>Other Type</label><input type="text" id="other_type" class="qform-control" placeholder="Specify"></div>
+                    <div class="qform-group"><label>Other Count</label><input type="number" id="other_count" class="qform-control" min="0" value="0"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="qnavigation"><div></div><div class="qnav-buttons"><button class="qbtn qbtn-primary" onclick="QuotationApp.nextStep(2)">Next: OT Selection →</button></div></div>
+          </div>
+
+          <!-- STEP 2: OT SELECTION -->
+          <div id="quot-step-2" class="quot-step">
+            <div class="qcard">
+              <div class="qcard-header"><h3>🔧 Select OT to Configure</h3></div>
+              <div class="qcard-body">
+                <div class="qinfo-box"><span class="label">Total OTs to Configure:</span><span id="total-ots-count">0</span></div>
+                <div class="ot-list" id="ot-list-container"></div>
+              </div>
+            </div>
+            <div class="qnavigation"><button class="qbtn qbtn-secondary" onclick="QuotationApp.prevStep(1)">← Back: Basic Information</button><div class="qnav-buttons"><button class="qbtn qbtn-primary" onclick="QuotationApp.nextStep(3)">Next: Configure Selected OT →</button></div></div>
+          </div>
+
+          <!-- STEP 3: OT CONFIGURATION -->
+          <div id="quot-step-3" class="quot-step">
+            <div class="qcard">
+              <div class="qcard-header"><h3>📐 OT Configuration - <span id="current-ot-name">Select an OT</span></h3></div>
+              <div class="qcard-body">
+                <div class="qform-section">
+                  <div class="qsection-title">🎯 OT Classification</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>OT Type <span class="required">*</span></label><select id="ot_type_select" class="qform-control"><option value="Modular OT">Modular OT</option><option value="IVF Lab">IVF Lab</option><option value="IVF OT">IVF OT</option><option value="Cath Lab">Cath Lab</option><option value="NICU">NICU</option><option value="ICU">ICU</option><option value="OT Passage">OT Passage</option></select></div>
+                    <div class="qform-group"><label>OT Configuration <span class="required">*</span></label><select id="ot_config" class="qform-control"><option value="Full">Full Configuration</option><option value="Semi">Semi Configuration</option><option value="Basic">Basic Configuration</option></select></div>
+                    <div class="qform-group"><label>Panel Type</label><select id="panel_type" class="qform-control"><option value="SS">SS (Stainless Steel)</option><option value="PPGL">PPGL</option><option value="GI">GI (Galvanized Iron)</option></select></div>
+                    <div class="qform-group"><label>USP Basis</label><select id="usp_basis" class="qform-control"><option value="Class 100">Class 100 (ISO 5)</option><option value="Class 1000">Class 1000 (ISO 6)</option><option value="Class 10000">Class 10000 (ISO 7)</option></select></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">📏 OT Dimensions</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Length (ft) <span class="required">*</span></label><input type="number" id="ot_length" class="qform-control" value="20" step="0.1" min="0" oninput="QuotationApp.updateArea()"></div>
+                    <div class="qform-group"><label>Width (ft) <span class="required">*</span></label><input type="number" id="ot_width" class="qform-control" value="20" step="0.1" min="0" oninput="QuotationApp.updateArea()"></div>
+                    <div class="qform-group"><label>Height (ft) <span class="required">*</span></label><input type="number" id="ot_height" class="qform-control" value="10" step="0.1" min="0" oninput="QuotationApp.updateACH()"></div>
+                    <div class="qform-group"><label>Area (sq.ft)</label><input type="text" id="ot_area" class="qform-control" disabled></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">🏗️ Flooring & Ceiling</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Flooring Type</label><select id="flooring_type" class="qform-control"><option value="Antistatic Vinyl">Antistatic Vinyl (3mm)</option><option value="Epoxy">Epoxy Flooring</option><option value="PVC">PVC Flooring</option><option value="Conductive Vinyl">Conductive Vinyl</option></select></div>
+                    <div class="qform-group"><label>Ceiling Type</label><select id="ceiling_type" class="qform-control"><option value="Modular PPGL">Modular PPGL</option><option value="Modular SS">Modular SS</option><option value="GI Powder Coated">GI Powder Coated</option></select></div>
+                    <div class="qform-group"><label>Ceiling Above Area Condition</label><select id="ceiling_above" class="qform-control"><option value="Conditioned">Conditioned</option><option value="Unconditioned">Unconditioned</option><option value="Partially Conditioned">Partially Conditioned</option></select></div>
+                    <div class="qform-group"><label>Self-Leveling Required</label><select id="self_leveling" class="qform-control"><option value="Yes">Yes</option><option value="No">No</option></select></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">🔌 Pendants & Equipment</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Anaesthesia Pendant</label><select id="anaesthesia_pendant" class="qform-control"><option value="None">None</option><option value="Single Arm">Single Arm</option><option value="Double Arm">Double Arm</option></select></div>
+                    <div class="qform-group"><label>Surgeon Pendant</label><select id="surgeon_pendant" class="qform-control"><option value="None">None</option><option value="Single Arm">Single Arm</option><option value="Double Arm">Double Arm</option></select></div>
+                    <div class="qform-group"><label>Pass Box</label><input type="number" id="pass_box" class="qform-control" value="1" min="0"></div>
+                    <div class="qform-group"><label>Storage Cabinet</label><input type="number" id="storage_cabinet" class="qform-control" value="2" min="0"></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">💡 Lighting</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Peripheral Lights (2x2 LED)</label><input type="number" id="peripheral_lights" class="qform-control" value="8" min="0"></div>
+                    <div class="qform-group"><label>X-Ray Viewer (Twin Plate)</label><input type="number" id="xray_viewer" class="qform-control" value="1" min="0"></div>
+                    <div class="qform-group"><label>Magnetic Writing Board</label><input type="number" id="writing_board" class="qform-control" value="1" min="0"></div>
+                  </div>
+                </div>
+                <div class="qnavigation" style="border-top:none;padding-top:0;">
+                  <button class="qbtn qbtn-secondary" onclick="QuotationApp.prevStep(2)">← Back: OT Selection</button>
+                  <div class="qnav-buttons">
+                    <button class="qbtn qbtn-outline" onclick="QuotationApp.saveOTConfig()">💾 Save OT Config</button>
+                    <button class="qbtn qbtn-primary" onclick="QuotationApp.nextStep(4)">Next: Heat Load & HVAC →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4: HEAT LOAD & HVAC -->
+          <div id="quot-step-4" class="quot-step">
+            <div class="qcard">
+              <div class="qcard-header"><h3>🌡️ Heat Load Calculation & HVAC Configuration</h3></div>
+              <div class="qcard-body">
+                <div class="qform-section">
+                  <div class="qsection-title">📊 Input Conditions</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Outside Temperature (°C)</label><input type="number" id="outside_temp" class="qform-control" value="35" step="0.1"></div>
+                    <div class="qform-group"><label>Outside Humidity (%)</label><input type="number" id="outside_humidity" class="qform-control" value="60" step="1" min="0" max="100"></div>
+                    <div class="qform-group"><label>Inside Temperature (°C)</label><input type="number" id="inside_temp" class="qform-control" value="21" step="0.1"></div>
+                    <div class="qform-group"><label>Inside Humidity (%)</label><input type="number" id="inside_humidity" class="qform-control" value="50" step="1" min="0" max="100"></div>
+                  </div>
+                  <button class="qbtn qbtn-primary" onclick="QuotationApp.calculateHeatLoad()" style="margin-top:15px;">🔄 Calculate Heat Load</button>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">🔥 Internal Heat Load</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Number of Persons</label><input type="number" id="persons_count" class="qform-control" value="6" min="1"></div>
+                    <div class="qform-group"><label>Equipment Load (kW)</label><input type="number" id="equipment_load" class="qform-control" value="2" step="0.1" min="0"></div>
+                    <div class="qform-group"><label>Lighting Load (W/sq.ft)</label><input type="number" id="lighting_load" class="qform-control" value="0.3" step="0.1" min="0"></div>
+                    <div class="qform-group"><label>Calculated Total Load (TR)</label><input type="text" id="calculated_tr" class="qform-control" disabled></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">❄️ HVAC System</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>HEPA Position</label><select id="hepa_position" class="qform-control"><option value="Terminal">Terminal (in Plenum)</option><option value="AHU">In AHU</option></select></div>
+                    <div class="qform-group"><label>Plenum Type</label><select id="plenum_type" class="qform-control"><option value="LAF 10x10">LAF 10' x 10'</option><option value="LAF 8x6">LAF 8' x 6'</option><option value="LAF 6x6">LAF 6' x 6'</option><option value="No LAF">No LAF (HEPA in AHU)</option></select></div>
+                    <div class="qform-group"><label>CFM Value</label><input type="number" id="cfm_value" class="qform-control" value="3000" min="0" oninput="QuotationApp.updateACH()"></div>
+                    <div class="qform-group"><label>Air Changes per Hour (Calculated)</label><input type="text" id="ach_calculated" class="qform-control" disabled></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">🔧 Ducting & AHU</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>Ducting Type</label><select id="ducting_type" class="qform-control"><option value="Aluminum">Aluminum</option><option value="GI">GI (Galvanized Iron)</option><option value="SS">SS (Stainless Steel)</option><option value="PI">PI (Pre-Insulated)</option></select></div>
+                    <div class="qform-group"><label>Ducting Quantity (Sq.Ft)</label><input type="number" id="ducting_qty" class="qform-control" value="1500" min="0"></div>
+                    <div class="qform-group"><label>AHU Skin Thickness</label><select id="ahu_skin" class="qform-control"><option value="25mm">25mm</option><option value="45mm">45mm</option></select></div>
+                    <div class="qform-group"><label>Static Pressure (mm WG)</label><input type="text" id="static_pressure" class="qform-control" value="100" placeholder="e.g., 100"></div>
+                    <div class="qform-group"><label>Motor Type</label><select id="motor_type" class="qform-control"><option value="Standard">Standard</option><option value="IE2">IE2 Efficiency</option><option value="IE3">IE3 Efficiency</option><option value="IE4">IE4 Efficiency</option></select></div>
+                    <div class="qform-group"><label>Fire Damper</label><select id="fire_damper" class="qform-control"><option value="Yes">Yes</option><option value="No">No</option></select></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">📱 Smart Controls</div>
+                  <div class="qform-grid">
+                    <div class="qform-group"><label>iSmart Device</label><select id="ismart_device" class="qform-control"><option value="Yes">Yes - With Cloud Monitoring</option><option value="No">No</option></select></div>
+                    <div class="qform-group"><label>Touch Panel (32")</label><select id="touch_panel" class="qform-control"><option value="Yes">Yes - Inside OT</option><option value="No">No</option></select></div>
+                    <div class="qform-group"><label>Outside Panel (10")</label><select id="outside_panel" class="qform-control"><option value="Yes">Yes</option><option value="No">No</option></select></div>
+                    <div class="qform-group"><label>SHRM System</label><select id="shrm_system" class="qform-control"><option value="Yes">Yes - Smart Heat Recovery</option><option value="No">No</option></select></div>
+                  </div>
+                </div>
+                <div class="qnavigation" style="border-top:none;padding-top:0;">
+                  <button class="qbtn qbtn-secondary" onclick="QuotationApp.prevStep(3)">← Back: OT Configuration</button>
+                  <div class="qnav-buttons">
+                    <button class="qbtn qbtn-outline" onclick="QuotationApp.saveHVACConfig()">💾 Save HVAC Config</button>
+                    <button class="qbtn qbtn-primary" onclick="QuotationApp.nextStep(5)">Next: Review & Summary →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 5: REVIEW & SUMMARY -->
+          <div id="quot-step-5" class="quot-step">
+            <div class="qcard">
+              <div class="qcard-header"><h3>📊 Configuration Summary</h3></div>
+              <div class="qcard-body">
+                <div class="qform-section">
+                  <div class="qsection-title">📋 Configured OTs</div>
+                  <div class="table-responsive">
+                    <table class="qtable" id="configured-ots-table">
+                      <thead><tr><th>OT Name</th><th>Type</th><th>Config</th><th>Dimensions</th><th>CFM</th><th>Cost</th></tr></thead>
+                      <tbody id="configured-ots-tbody"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">💰 Financial Summary</div>
+                  <div class="summary-grid">
+                    <div class="summary-item"><div class="label">Total OTs</div><div class="value" id="summary-total-ots">0</div></div>
+                    <div class="summary-item"><div class="label">Basic Total</div><div class="value" id="summary-basic-cost">₹0</div></div>
+                    <div class="summary-item"><div class="label">Installation & Labor</div><div class="value" id="summary-installation">₹0</div></div>
+                    <div class="summary-item"><div class="label">Transport</div><div class="value" id="summary-transport">₹0</div></div>
+                    <div class="summary-item"><div class="label">Subtotal</div><div class="value" id="summary-subtotal">₹0</div></div>
+                    <div class="summary-item"><div class="label">GST (18%)</div><div class="value" id="summary-gst">₹0</div></div>
+                    <div class="summary-item"><div class="label">Grand Total</div><div class="value" id="summary-grand-total" style="color:#28a745;">₹0</div></div>
+                  </div>
+                </div>
+                <div class="qform-section">
+                  <div class="qsection-title">🔬 Project Technical Summary</div>
+                  <div class="summary-grid" id="tech-summary"></div>
+                </div>
+              </div>
+            </div>
+            <div class="qnavigation">
+              <button class="qbtn qbtn-secondary" onclick="QuotationApp.prevStep(4)">← Back: Heat Load & HVAC</button>
+              <div class="qnav-buttons">
+                <button class="qbtn qbtn-outline" onclick="window.print()">🖨️ Print Summary</button>
+                <button class="qbtn qbtn-outline" onclick="QuotationApp.exportToExcel()">📊 Export Excel</button>
+                <button class="qbtn qbtn-success" onclick="QuotationApp.generateQuotation()">📄 Generate PDF Quotation →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════
+// RATE DATABASE
+// ═══════════════════════════════════════════
+const Rates = {
+    panel: { ppgl_50mm: 2200, ppgl_100mm: 2450, ss304_50mm: 3500, ss304_100mm: 3800, gi_50mm: 1800, gi_100mm: 2000 },
+    flooring: { epoxy: 350, vinyl_2mm: 420, vinyl_3mm: 480, conductive_vinyl: 650, self_leveling: 85 },
+    ceiling: { ppgl_50mm: 1900, ss304_50mm: 2800, gi_50mm: 1500 },
+    coving: { aluminum: 365, ss304: 480, ppgl: 290 },
+    door: { sliding_1800x2100: 175000, sliding_1200x2100: 145000, swing_1200x2100: 95000 },
+    hvac: { ahu_per_tr: 120000, odu_per_tr: 85000, duct_per_sqft: 250, duct_gi: 220, duct_ss: 450, duct_pi: 380, insulation_per_sqft: 45, grilles_per_unit: 8500, vcd_per_unit: 6500, fire_damper: 15000 },
+    plenum: { laf_10x10: 340000, laf_8x6: 220000, laf_6x6: 165000 },
+    hepa: { h14_24x24: 25000, h14_12x24: 15000, pre_filter: 3500 },
+    pendant: { anaesthesia_single: 295000, anaesthesia_double: 385000, surgeon_single: 335000, surgeon_double: 425000 },
+    control: { hvac_panel_ip65: 105000, surgeon_touch_32: 195000, outside_touch_10: 75000, ismart_device: 65000, shrm_system: 95000 },
+    lighting: { led_2x2_36w: 4500, xray_viewer_twin: 38000, xray_viewer_single: 22000 },
+    equipment: { pass_box: 85000, storage_cabinet: 48000, writing_board: 8500 },
+    validation: { particle_count: 25000, airflow_test: 15000, dop_test: 18000 },
+    labor: { panel_installation: 180, hvac_installation_pct: 0.12, electrical: 25000, commissioning: 45000 },
+    transport: { local: 50000, regional: 125000, national: 200000 }
+};
+
+// ═══════════════════════════════════════════
+// CALCULATION ENGINE
+// ═══════════════════════════════════════════
+const CalcEngine = {
+    calculateAreas(ot) {
+        const l = ot.dimensions?.l || 20, w = ot.dimensions?.w || 20, h = ot.dimensions?.h || 10;
+        return { floor: Math.round(l*w*100)/100, ceiling: Math.round(l*w*100)/100, wall: Math.round(2*(l+w)*h*100)/100, volume: Math.round(l*w*h*100)/100, coving: Math.round(2*(l+w)*1.1*100)/100 };
+    },
+    calculateTR(ot) {
+        const areas = this.calculateAreas(ot), persons = ot.hvac?.persons || 6, equipmentKW = ot.hvac?.equipmentLoad || 2, lightingWPerSqft = ot.hvac?.lightingLoad || 0.3;
+        const personLoadKW = persons * 0.1, lightingLoadKW = (lightingWPerSqft * areas.floor) / 1000, envelopeLoadKW = areas.wall * 0.02 + areas.ceiling * 0.015;
+        const freshAirLoadKW = (areas.volume * 5 / 60) * 0.0018;
+        const totalKW = personLoadKW + lightingLoadKW + equipmentKW + envelopeLoadKW + freshAirLoadKW;
+        return { tr: Math.round((totalKW/3.517)*1.15*10)/10, kw: Math.round(totalKW*10)/10 };
+    },
+    calculateCFM(ot, ach=25) { return Math.round((this.calculateAreas(ot).volume*ach)/60); },
+    calculateACH(ot, cfm) { return Math.round((cfm*60)/this.calculateAreas(ot).volume*10)/10; },
+    calculateHEPAArea(cfm, velocity=90) { return Math.round(cfm/velocity*10)/10; },
+    calculateHEPACount(hepaArea) { return Math.ceil(hepaArea/4); },
+    calculateDucting(ot) { return Math.round(this.calculateAreas(ot).floor*1.3); },
+    calculateProjectSummary(ots) {
+        const s = { totalTR:0, totalCFM:0, totalArea:0, totalVolume:0, otCount:0 };
+        ots.forEach(ot => { if(ot?.configured){ const a=this.calculateAreas(ot); s.totalTR+=this.calculateTR(ot).tr; s.totalCFM+=ot.hvac?.cfm||this.calculateCFM(ot); s.totalArea+=a.floor; s.totalVolume+=a.volume; s.otCount++; } });
+        return s;
+    }
+};
+
+// ═══════════════════════════════════════════
+// BOQ ENGINE
+// ═══════════════════════════════════════════
+const BOQEngine = {
+    generateBOQ(ot, rates=Rates) {
+        if(!ot?.configured) return null;
+        const areas=CalcEngine.calculateAreas(ot), tr=CalcEngine.calculateTR(ot).tr, cfm=ot.hvac?.cfm||CalcEngine.calculateCFM(ot);
+        const boq={items:[],summary:{}};
+        const getPanelRate=()=>{ const k=ot.panel_type?.toLowerCase().includes('ss')?'ss304':ot.panel_type?.toLowerCase().includes('gi')?'gi':'ppgl'; return rates.panel[`${k}_100mm`]||rates.panel.ppgl_100mm; };
+        const getCeilingRate=()=>{ const k=ot.ceiling_type?.toLowerCase().includes('ss')?'ss304':ot.ceiling_type?.toLowerCase().includes('gi')?'gi':'ppgl'; return rates.ceiling[`${k}_50mm`]||rates.ceiling.ppgl_50mm; };
+        const getCovingRate=()=>{ const k=ot.panel_type?.toLowerCase().includes('ss')?'ss304':'aluminum'; return rates.coving[k]||rates.coving.aluminum; };
+        const getFlooringRate=()=>{ if(ot.flooring_type?.includes('Vinyl'))return rates.flooring.vinyl_3mm; if(ot.flooring_type?.includes('Conductive'))return rates.flooring.conductive_vinyl; return rates.flooring.epoxy; };
+        const getDuctRate=()=>{ if(ot.hvac?.ducting_type==='GI')return rates.hvac.duct_gi; if(ot.hvac?.ducting_type==='SS')return rates.hvac.duct_ss; if(ot.hvac?.ducting_type==='PI')return rates.hvac.duct_pi; return rates.hvac.duct_per_sqft; };
+        const getPlenumRate=()=>{ if(ot.hvac?.plenum_type?.includes('10x10'))return rates.plenum.laf_10x10; if(ot.hvac?.plenum_type?.includes('8x6'))return rates.plenum.laf_8x6; return rates.plenum.laf_6x6; };
+
+        boq.items.push({category:'Panels',item:'Modular Wall Panels',specification:`${ot.panel_type} 100mm`,qty:Math.ceil(areas.wall*1.1),unit:'Sq.Ft',rate:getPanelRate(),amount:Math.ceil(areas.wall*1.1)*getPanelRate()});
+        boq.items.push({category:'Panels',item:'Modular Ceiling Panels',specification:`${ot.ceiling_type} 50mm`,qty:Math.ceil(areas.ceiling*1.1),unit:'Sq.Ft',rate:getCeilingRate(),amount:Math.ceil(areas.ceiling*1.1)*getCeilingRate()});
+        boq.items.push({category:'Panels',item:'Coving',specification:ot.panel_type,qty:Math.ceil(areas.coving),unit:'R.Ft',rate:getCovingRate(),amount:areas.coving*getCovingRate()});
+        boq.items.push({category:'Flooring',item:'Flooring',specification:ot.flooring_type,qty:areas.floor,unit:'Sq.Ft',rate:getFlooringRate(),amount:areas.floor*getFlooringRate()});
+        if(ot.self_leveling==='Yes') boq.items.push({category:'Flooring',item:'Self-Leveling Compound',specification:'Polymer-modified',qty:areas.floor,unit:'Sq.Ft',rate:rates.flooring.self_leveling,amount:areas.floor*rates.flooring.self_leveling});
+        boq.items.push({category:'Doors',item:'Hermetically Sealed Sliding Door',specification:'1800x2100mm SS304',qty:1,unit:'Each',rate:rates.door.sliding_1800x2100,amount:rates.door.sliding_1800x2100});
+        const ahuCost=tr*rates.hvac.ahu_per_tr; boq.items.push({category:'HVAC',item:'Air Handling Unit (AHU)',specification:`${tr} TR, ${cfm} CFM`,qty:1,unit:'Each',rate:ahuCost,amount:ahuCost});
+        const oduCost=tr*rates.hvac.odu_per_tr; boq.items.push({category:'HVAC',item:'Outdoor Unit (ODU)',specification:`${tr} TR`,qty:1,unit:'Each',rate:oduCost,amount:oduCost});
+        const ductQty=ot.hvac?.ducting_qty||CalcEngine.calculateDucting(ot), ductCost=ductQty*getDuctRate();
+        boq.items.push({category:'HVAC',item:'Ducting',specification:`${ot.hvac?.ducting_type||'Aluminum'} with Insulation`,qty:ductQty,unit:'Sq.Ft',rate:getDuctRate(),amount:ductCost});
+        if(ot.hvac?.plenum_type&&!ot.hvac.plenum_type.includes('No LAF')){
+            boq.items.push({category:'HVAC',item:'LAF Plenum',specification:ot.hvac.plenum_type,qty:1,unit:'Each',rate:getPlenumRate(),amount:getPlenumRate()});
+            const hepaCount=CalcEngine.calculateHEPACount(CalcEngine.calculateHEPAArea(cfm));
+            boq.items.push({category:'HVAC',item:'HEPA Filters H14',specification:`24"x24", ${hepaCount} Nos`,qty:hepaCount,unit:'Each',rate:rates.hepa.h14_24x24,amount:hepaCount*rates.hepa.h14_24x24});
+        }
+        boq.items.push({category:'Controls',item:'HVAC Control Panel',specification:'IP65 with VFD',qty:1,unit:'Each',rate:rates.control.hvac_panel_ip65,amount:rates.control.hvac_panel_ip65});
+        if(ot.hvac?.touch_panel==='Yes') boq.items.push({category:'Controls',item:'Surgeon Touch Panel',specification:'32" with Modbus',qty:1,unit:'Each',rate:rates.control.surgeon_touch_32,amount:rates.control.surgeon_touch_32});
+        if(ot.hvac?.outside_panel==='Yes') boq.items.push({category:'Controls',item:'Outside OT Panel',specification:'10" Touch',qty:1,unit:'Each',rate:rates.control.outside_touch_10,amount:rates.control.outside_touch_10});
+        if(ot.hvac?.ismart==='Yes') boq.items.push({category:'Controls',item:'iSmart Device',specification:'Cloud Monitoring',qty:1,unit:'Each',rate:rates.control.ismart_device,amount:rates.control.ismart_device});
+        if(ot.hvac?.shrm==='Yes') boq.items.push({category:'Controls',item:'SHRM System',specification:'Smart Heat Recovery',qty:1,unit:'Each',rate:rates.control.shrm_system,amount:rates.control.shrm_system});
+        if(ot.anaesthesia_pendant!=='None'){ const r=ot.anaesthesia_pendant==='Single Arm'?rates.pendant.anaesthesia_single:rates.pendant.anaesthesia_double; boq.items.push({category:'Pendants',item:'Anaesthesia Pendant',specification:ot.anaesthesia_pendant,qty:1,unit:'Each',rate:r,amount:r}); }
+        if(ot.surgeon_pendant!=='None'){ const r=ot.surgeon_pendant==='Single Arm'?rates.pendant.surgeon_single:rates.pendant.surgeon_double; boq.items.push({category:'Pendants',item:'Surgeon Pendant',specification:ot.surgeon_pendant,qty:1,unit:'Each',rate:r,amount:r}); }
+        const lightCount=ot.peripheral_lights||CalcEngine.calculateLightingCount(ot); boq.items.push({category:'Electrical',item:'LED Panel Lights',specification:'2x2 ft, 36W',qty:lightCount,unit:'Nos',rate:rates.lighting.led_2x2_36w,amount:lightCount*rates.lighting.led_2x2_36w});
+        if(ot.xray_viewer>0) boq.items.push({category:'Electrical',item:'X-Ray Viewer',specification:'Twin Plate LED',qty:ot.xray_viewer,unit:'Each',rate:rates.lighting.xray_viewer_twin,amount:ot.xray_viewer*rates.lighting.xray_viewer_twin});
+        if(ot.pass_box>0) boq.items.push({category:'Equipment',item:'Pass Box',specification:'SS304 with UV',qty:ot.pass_box,unit:'Each',rate:rates.equipment.pass_box,amount:ot.pass_box*rates.equipment.pass_box});
+        if(ot.storage_cabinet>0) boq.items.push({category:'Equipment',item:'Storage Cabinet',specification:'SS304',qty:ot.storage_cabinet,unit:'Each',rate:rates.equipment.storage_cabinet,amount:ot.storage_cabinet*rates.equipment.storage_cabinet});
+        if(ot.writing_board>0) boq.items.push({category:'Equipment',item:'Magnetic Writing Board',specification:'600x800mm',qty:ot.writing_board,unit:'Each',rate:rates.equipment.writing_board,amount:ot.writing_board*rates.equipment.writing_board});
+        const validationCost=rates.validation.particle_count+rates.validation.airflow_test+rates.validation.dop_test; boq.items.push({category:'Validation',item:'System Validation',specification:'Particle Count, Airflow, DOP',qty:1,unit:'Lot',rate:validationCost,amount:validationCost});
+        
+        const basicTotal=boq.items.reduce((s,i)=>s+i.amount,0);
+        const installationCost=areas.wall*rates.labor.panel_installation;
+        const hvacInstallation=(ahuCost+oduCost+ductCost)*rates.labor.hvac_installation_pct;
+        const grandTotal=basicTotal+installationCost+hvacInstallation+rates.transport.regional;
+        const gst=grandTotal*0.18;
+        boq.summary={basicTotal:Math.round(basicTotal),installation:Math.round(installationCost+hvacInstallation),transport:rates.transport.regional,subtotal:Math.round(grandTotal),gst:Math.round(gst),grandTotal:Math.round(grandTotal+gst)};
+        return boq;
+    },
+    generateProjectBOQ(ots, rates=Rates) {
+        const p={ots:[],totalSummary:{basicTotal:0,installation:0,transport:0,subtotal:0,gst:0,grandTotal:0}};
+        ots.forEach((ot,i)=>{ if(ot?.configured){ const boq=this.generateBOQ(ot,rates); p.ots.push({name:ot.name||`OT-${i+1}`,boq}); ['basicTotal','installation','transport','subtotal','gst','grandTotal'].forEach(k=>p.totalSummary[k]+=boq.summary[k]); } });
+        return p;
+    }
+};
+
+// ═══════════════════════════════════════════
+// EXPORT ENGINE
+// ═══════════════════════════════════════════
+const ExportEngine = {
+    exportToExcel(projectData, ots, rates=Rates) {
+        if(typeof XLSX==='undefined'){ console.error('SheetJS not loaded'); return null; }
+        const wb=XLSX.utils.book_new(), projectBOQ=BOQEngine.generateProjectBOQ(ots,rates);
+        const summaryData=[['WIESPL OT PROJECT QUOTATION'],[''],['Hospital',projectData.hospitalName||''],['City',projectData.city||''],['Doctor',projectData.doctorName||''],['Date',new Date().toLocaleDateString('en-IN')],[''],['OT Summary'],['Total OTs',ots.length],['Configured OTs',ots.filter(o=>o.configured).length]];
+        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summaryData),'Summary');
+        const boqData=[['BILL OF QUANTITIES'],[''],['Item','Category','Specification','Qty','Unit','Rate (₹)','Amount (₹)']];
+        projectBOQ.ots.forEach(otData=>{ boqData.push([otData.name,'','','','','','']); otData.boq.items.forEach(item=>boqData.push([item.item,item.category,item.specification,item.qty,item.unit,item.rate,item.amount])); boqData.push(['','','','','','Subtotal:',otData.boq.summary.grandTotal]); boqData.push(['']); });
+        boqData.push(['','','','','','GRAND TOTAL:',projectBOQ.totalSummary.grandTotal]);
+        XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(boqData),'BOQ');
+        const fileName=`WIESPL_Quotation_${projectData.hospitalName||'Project'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb,fileName);
+        return fileName;
+    },
+    generatePrintableQuotation(projectData, ots, rates=Rates) {
+        const projectBOQ=BOQEngine.generateProjectBOQ(ots,rates), summary=CalcEngine.calculateProjectSummary(ots);
+        const f=(n)=>'₹'+n.toLocaleString('en-IN');
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WIESPL Quotation - ${projectData.hospitalName||'Project'}</title><style>body{font-family:Arial,sans-serif;margin:40px}h1{color:#0066cc}h2{color:#0066cc;border-bottom:2px solid #0066cc}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ddd;padding:10px}th{background:#0066cc;color:white}.total{font-weight:700}.grand{background:#0066cc;color:white}@media print{body{margin:20px}}</style></head><body><h1>WESTERN INDIA ELECTROMEDICAL SYSTEMS PVT. LTD.</h1><p>Techno-Commercial Quotation for OT Project</p><div style="display:flex;justify-content:space-between"><div><strong>Quotation:</strong> WIESPL/${new Date().getFullYear()}/${Math.floor(Math.random()*1000)}<br><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div><div><strong>To:</strong><br>${projectData.hospitalName||''}<br>${projectData.city||''}<br>Dr. ${projectData.doctorName||''}</div></div><h2>Project Overview</h2><table><tr><th>Parameter</th><th>Value</th></tr><tr><td>Total OTs</td><td>${summary.otCount}</td></tr><tr><td>Total Area</td><td>${Math.round(summary.totalArea)} sq.ft</td></tr><tr><td>Total TR</td><td>${summary.totalTR.toFixed(1)} TR</td></tr><tr><td>Total CFM</td><td>${summary.totalCFM} CFM</td></tr></table>${projectBOQ.ots.map(otData=>`<h3>${otData.name}</h3><table><tr><th>Category</th><th>Item</th><th>Amount (₹)</th></tr>${otData.boq.items.map(item=>`<tr><td>${item.category}</td><td>${item.item}</td><td style="text-align:right">${item.amount.toLocaleString('en-IN')}</td></tr>`).join('')}<tr class="total"><td colspan="2">OT Total</td><td style="text-align:right">${otData.boq.summary.grandTotal.toLocaleString('en-IN')}</td></tr></table>`).join('')}<h2>Financial Summary</h2><table><tr><td>Basic Total</td><td style="text-align:right">${f(projectBOQ.totalSummary.basicTotal)}</td></tr><tr><td>Installation</td><td style="text-align:right">${f(projectBOQ.totalSummary.installation)}</td></tr><tr><td>Transport</td><td style="text-align:right">${f(projectBOQ.totalSummary.transport)}</td></tr><tr><td>Subtotal</td><td style="text-align:right">${f(projectBOQ.totalSummary.subtotal)}</td></tr><tr><td>GST @18%</td><td style="text-align:right">${f(projectBOQ.totalSummary.gst)}</td></tr><tr class="grand"><td><strong>GRAND TOTAL</strong></td><td style="text-align:right"><strong>${f(projectBOQ.totalSummary.grandTotal)}</strong></td></tr></table><h2>Terms & Conditions</h2><ol><li>Price: Ex-works Pune</li><li>Payment: 50% advance, 45% before dispatch, 5% on completion</li><li>Delivery: 4-5 weeks</li><li>Warranty: 15 months</li><li>Validity: 30 days</li></ol><div style="margin-top:50px;text-align:right"><p>For WESTERN INDIA ELECTROMEDICAL SYSTEMS PVT. LTD.</p><br><br><p>_________________________</p><p><strong>Authorised Signatory</strong></p></div></body></html>`;
+    }
+};
+
+// ═══════════════════════════════════════════
+// MAIN QUOTATION APPLICATION
+// ═══════════════════════════════════════════
+const QuotationApp = {
+    currentStep: 1,
+    currentOTIndex: 0,
+    otConfigs: [],
+
+    init() {
+        this.loadFromStorage();
+        this.updateStepDisplay(1);
+        this.updateArea();
+        this.updateACH();
+    },
+
+    showToast(msg, type='success') {
+        const c=document.getElementById('toastContainer');
+        const t=document.createElement('div');
+        t.className=`toast ${type}`;
+        t.innerHTML=`<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span><span>${msg}</span>`;
+        c.appendChild(t);
+        setTimeout(()=>t.remove(),4000);
+    },
+
+    formatINR(amount) {
+        if(amount>=10000000) return '₹'+(amount/10000000).toFixed(2)+' Cr';
+        if(amount>=100000) return '₹'+(amount/100000).toFixed(2)+' L';
+        return '₹'+amount.toLocaleString('en-IN');
+    },
+
+    updateArea() {
+        const l=parseFloat(document.getElementById('ot_length')?.value)||20, w=parseFloat(document.getElementById('ot_width')?.value)||20;
+        const el=document.getElementById('ot_area'); if(el) el.value=(l*w).toFixed(2);
+    },
+
+    updateACH() {
+        const ot={dimensions:{l:parseFloat(document.getElementById('ot_length')?.value)||20,w:parseFloat(document.getElementById('ot_width')?.value)||20,h:parseFloat(document.getElementById('ot_height')?.value)||10}};
+        const cfm=parseFloat(document.getElementById('cfm_value')?.value)||3000;
+        const ach=(cfm*60)/CalcEngine.calculateAreas(ot).volume;
+        const el=document.getElementById('ach_calculated'); if(el) el.value=ach.toFixed(1);
+    },
+
+    calculateHeatLoad() {
+        const ot={dimensions:{l:parseFloat(document.getElementById('ot_length')?.value)||20,w:parseFloat(document.getElementById('ot_width')?.value)||20,h:parseFloat(document.getElementById('ot_height')?.value)||10},hvac:{persons:parseInt(document.getElementById('persons_count')?.value)||6,equipmentLoad:parseFloat(document.getElementById('equipment_load')?.value)||2,lightingLoad:parseFloat(document.getElementById('lighting_load')?.value)||0.3}};
+        const tr=CalcEngine.calculateTR(ot).tr;
+        const el=document.getElementById('calculated_tr'); if(el) el.value=tr.toFixed(2);
+        this.showToast(`Heat Load: ${tr.toFixed(2)} TR`,'info');
+    },
+
+    fetchWeatherData() {
+        const temp=30+Math.random()*10, humidity=40+Math.random()*40;
+        document.getElementById('outside_temp').value=temp.toFixed(1);
+        document.getElementById('outside_humidity').value=humidity.toFixed(0);
+        const div=document.getElementById('weather-info');
+        div.style.display='block';
+        div.innerHTML=`<div style="display:flex;justify-content:space-between"><div><div class="temp">${temp.toFixed(1)}°C</div><div class="condition">${['Sunny','Partly Cloudy','Humid'][Math.floor(Math.random()*3)]}</div></div><div style="text-align:right"><div>Humidity: ${humidity.toFixed(0)}%</div></div></div>`;
+        this.showToast('Weather data fetched!','success');
+    },
+
+    generateOTList() {
+        const counts={modular:parseInt(document.getElementById('modular_ot')?.value)||0,ivfLab:parseInt(document.getElementById('ivf_lab')?.value)||0,ivfOT:parseInt(document.getElementById('ivf_ot')?.value)||0,cathLab:parseInt(document.getElementById('cath_lab')?.value)||0,nicu:parseInt(document.getElementById('nicu')?.value)||0,icu:parseInt(document.getElementById('icu')?.value)||0,passage:parseInt(document.getElementById('ot_passage')?.value)||0,other:parseInt(document.getElementById('other_count')?.value)||0};
+        const mapping={modular:'Modular OT',ivfLab:'IVF Lab',ivfOT:'IVF OT',cathLab:'Cath Lab',nicu:'NICU',icu:'ICU',passage:'OT Passage',other:document.getElementById('other_type')?.value||'Other'};
+        const list=[];
+        Object.entries(counts).forEach(([k,c])=>{ for(let i=0;i<c;i++) list.push({id:`${mapping[k]}-${i+1}`,name:`${mapping[k]} ${i+1}`,type:mapping[k],configured:false}); });
+        return list;
+    },
+
+    renderOTSelection() {
+        const list=this.generateOTList();
+        document.getElementById('total-ots-count').textContent=list.length;
+        const container=document.getElementById('ot-list-container');
+        if(list.length===0){ container.innerHTML='<div class="qinfo-box" style="text-align:center">No OTs defined. Go back and specify OT counts.</div>'; return; }
+        container.innerHTML=list.map((ot,i)=>{
+            const cfg=this.otConfigs[i];
+            return `<div class="ot-item ${cfg?.configured?'configured':''}" onclick="QuotationApp.selectOT(${i})">
+                <input type="radio" name="selected_ot" value="${i}" id="ot_${i}" ${this.currentOTIndex===i?'checked':''}>
+                <div class="ot-info"><div class="ot-name">${ot.name}</div><div class="ot-details">Type: ${ot.type} | ${cfg?.configured?`Config: ${cfg.ot_config} | Dim: ${cfg.dimensions?.l}'×${cfg.dimensions?.w}'`:'Not configured'}</div></div>
+                <div class="ot-status ${cfg?.configured?'configured':'pending'}">${cfg?.configured?'✓ Configured':'⏳ Pending'}</div>
+            </div>`;
+        }).join('');
+    },
+
+    selectOT(idx) {
+        this.currentOTIndex=idx;
+        document.querySelectorAll('.ot-item').forEach((el,i)=>el.classList.toggle('selected',i===idx));
+        const cfg=this.otConfigs[idx];
+        if(cfg?.configured) this.loadOTConfig(cfg);
+        document.getElementById('current-ot-name').textContent=this.generateOTList()[idx]?.name||'OT';
+    },
+
+    loadOTConfig(cfg) {
+        const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val; };
+        set('ot_type_select',cfg.ot_type||'Modular OT'); set('ot_config',cfg.ot_config||'Full'); set('panel_type',cfg.panel_type||'PPGL'); set('usp_basis',cfg.usp_basis||'Class 100');
+        set('ot_length',cfg.dimensions?.l||20); set('ot_width',cfg.dimensions?.w||20); set('ot_height',cfg.dimensions?.h||10);
+        set('flooring_type',cfg.flooring_type||'Antistatic Vinyl'); set('ceiling_type',cfg.ceiling_type||'Modular PPGL'); set('ceiling_above',cfg.ceiling_above||'Conditioned'); set('self_leveling',cfg.self_leveling||'No');
+        set('anaesthesia_pendant',cfg.anaesthesia_pendant||'Single Arm'); set('surgeon_pendant',cfg.surgeon_pendant||'Double Arm');
+        set('pass_box',cfg.pass_box||1); set('storage_cabinet',cfg.storage_cabinet||2); set('peripheral_lights',cfg.peripheral_lights||8); set('xray_viewer',cfg.xray_viewer||1); set('writing_board',cfg.writing_board||1);
+        if(cfg.hvac){ set('outside_temp',cfg.hvac.outside_temp||35); set('outside_humidity',cfg.hvac.outside_humidity||60); set('inside_temp',cfg.hvac.inside_temp||21); set('inside_humidity',cfg.hvac.inside_humidity||50); set('persons_count',cfg.hvac.persons||6); set('equipment_load',cfg.hvac.equipmentLoad||2); set('lighting_load',cfg.hvac.lightingLoad||0.3); set('hepa_position',cfg.hvac.hepa_position||'Terminal'); set('plenum_type',cfg.hvac.plenum_type||'LAF 10x10'); set('cfm_value',cfg.hvac.cfm||3000); set('ducting_type',cfg.hvac.ducting_type||'Aluminum'); set('ducting_qty',cfg.hvac.ducting_qty||1500); set('ahu_skin',cfg.hvac.ahu_skin||'45mm'); set('static_pressure',cfg.hvac.static_pressure||'100'); set('motor_type',cfg.hvac.motor_type||'IE3'); set('fire_damper',cfg.hvac.fire_damper||'Yes'); set('ismart_device',cfg.hvac.ismart||'No'); set('touch_panel',cfg.hvac.touch_panel||'Yes'); set('outside_panel',cfg.hvac.outside_panel||'Yes'); set('shrm_system',cfg.hvac.shrm||'No'); }
+        this.updateArea(); this.updateACH();
+    },
+
+    saveOTConfig() {
+        const get=(id)=>document.getElementById(id)?.value;
+        const cfg={configured:true,name:this.generateOTList()[this.currentOTIndex]?.name||`OT-${this.currentOTIndex+1}`,ot_type:get('ot_type_select'),ot_config:get('ot_config'),panel_type:get('panel_type'),usp_basis:get('usp_basis'),dimensions:{l:parseFloat(get('ot_length'))||20,w:parseFloat(get('ot_width'))||20,h:parseFloat(get('ot_height'))||10},flooring_type:get('flooring_type'),ceiling_type:get('ceiling_type'),ceiling_above:get('ceiling_above'),self_leveling:get('self_leveling'),anaesthesia_pendant:get('anaesthesia_pendant'),surgeon_pendant:get('surgeon_pendant'),pass_box:parseInt(get('pass_box'))||0,storage_cabinet:parseInt(get('storage_cabinet'))||0,peripheral_lights:parseInt(get('peripheral_lights'))||8,xray_viewer:parseInt(get('xray_viewer'))||0,writing_board:parseInt(get('writing_board'))||0};
+        this.otConfigs[this.currentOTIndex]=cfg;
+        const boq=BOQEngine.generateBOQ(cfg,Rates); if(boq) cfg.boq=boq;
+        this.saveToStorage();
+        this.showToast(`${cfg.name} saved! BOQ: ${this.formatINR(boq?.summary?.grandTotal||0)}`,'success');
+    },
+
+    saveHVACConfig() {
+        let cfg=this.otConfigs[this.currentOTIndex];
+        if(!cfg){ cfg={configured:true,name:this.generateOTList()[this.currentOTIndex]?.name||`OT-${this.currentOTIndex+1}`}; this.otConfigs[this.currentOTIndex]=cfg; }
+        const get=(id)=>document.getElementById(id)?.value;
+        cfg.hvac={outside_temp:parseFloat(get('outside_temp'))||35,outside_humidity:parseFloat(get('outside_humidity'))||60,inside_temp:parseFloat(get('inside_temp'))||21,inside_humidity:parseFloat(get('inside_humidity'))||50,persons:parseInt(get('persons_count'))||6,equipmentLoad:parseFloat(get('equipment_load'))||2,lightingLoad:parseFloat(get('lighting_load'))||0.3,hepa_position:get('hepa_position'),plenum_type:get('plenum_type'),cfm:parseInt(get('cfm_value'))||3000,ducting_type:get('ducting_type'),ducting_qty:parseInt(get('ducting_qty'))||1500,ahu_skin:get('ahu_skin'),static_pressure:get('static_pressure'),motor_type:get('motor_type'),fire_damper:get('fire_damper'),ismart:get('ismart_device'),touch_panel:get('touch_panel'),outside_panel:get('outside_panel'),shrm:get('shrm_system')};
+        cfg.boq=BOQEngine.generateBOQ(cfg,Rates);
+        this.saveToStorage();
+        this.showToast(`HVAC saved for ${cfg.name}!`,'success');
+    },
+
+    renderSummary() {
+        const configured=this.otConfigs.filter(c=>c?.configured);
+        const projectBOQ=BOQEngine.generateProjectBOQ(configured,Rates), s=projectBOQ.totalSummary;
+        const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
+        set('summary-total-ots',`${configured.length}/${this.generateOTList().length}`);
+        set('summary-basic-cost',this.formatINR(s.basicTotal)); set('summary-installation',this.formatINR(s.installation));
+        set('summary-transport',this.formatINR(s.transport)); set('summary-subtotal',this.formatINR(s.subtotal));
+        set('summary-gst',this.formatINR(s.gst)); set('summary-grand-total',this.formatINR(s.grandTotal));
+        const tech=CalcEngine.calculateProjectSummary(configured);
+        document.getElementById('tech-summary').innerHTML=`<div class="summary-item"><div class="label">Total TR</div><div class="value">${tech.totalTR.toFixed(1)} TR</div></div><div class="summary-item"><div class="label">Total CFM</div><div class="value">${tech.totalCFM} CFM</div></div><div class="summary-item"><div class="label">Total Area</div><div class="value">${Math.round(tech.totalArea)} sq.ft</div></div>`;
+        document.getElementById('configured-ots-tbody').innerHTML=this.generateOTList().map((ot,i)=>{ const cfg=this.otConfigs[i]; if(!cfg?.configured) return `<tr style="opacity:0.5"><td>${ot.name}</td><td>${ot.type}</td><td colspan="4" style="text-align:center">Not configured</td></tr>`; return `<tr><td><strong>${cfg.name}</strong></td><td>${cfg.ot_type}</td><td>${cfg.ot_config}</td><td>${cfg.dimensions?.l}'×${cfg.dimensions?.w}'×${cfg.dimensions?.h}'</td><td>${cfg.hvac?.cfm||'-'} CFM</td><td style="color:#28a745">${this.formatINR(cfg.boq?.summary?.grandTotal||0)}</td></tr>`; }).join('');
+    },
+
+    generateQuotation() {
+        const projectData={hospitalName:document.getElementById('hospital_name')?.value||'Client Hospital',city:document.getElementById('city')?.value||'',doctorName:document.getElementById('doctor_name')?.value||'Doctor'};
+        const configured=this.otConfigs.filter(c=>c?.configured);
+        if(configured.length===0){ this.showToast('Please configure at least one OT','error'); return; }
+        const win=window.open('','_blank'); win.document.write(ExportEngine.generatePrintableQuotation(projectData,configured,Rates)); win.document.close();
+        this.showToast('Quotation generated!','success');
+    },
+
+    exportToExcel() {
+        const projectData={hospitalName:document.getElementById('hospital_name')?.value||'Project',city:document.getElementById('city')?.value||'',doctorName:document.getElementById('doctor_name')?.value||''};
+        const configured=this.otConfigs.filter(c=>c?.configured);
+        if(configured.length===0){ this.showToast('Please configure at least one OT','error'); return; }
+        const fn=ExportEngine.exportToExcel(projectData,configured,Rates);
+        this.showToast(`Excel exported: ${fn}`,'success');
+    },
+
+    updateStepDisplay(step) {
+        document.querySelectorAll('.quot-builder .step').forEach((s,i)=>{ s.classList.remove('active','completed'); if(i+1===step)s.classList.add('active'); else if(i+1<step)s.classList.add('completed'); });
+        document.querySelectorAll('.quot-step').forEach(p=>p.classList.remove('active'));
+        document.getElementById(`quot-step-${step}`)?.classList.add('active');
+    },
+
+    goToStep(step) { if(step<this.currentStep){ this.currentStep=step; this.updateStepDisplay(step); } },
+    nextStep(step) {
+        if(this.currentStep===1&&!document.getElementById('hospital_name')?.value){ this.showToast('Please enter Hospital Name','error'); return; }
+        if(step===2) this.renderOTSelection();
+        if(step===5) this.renderSummary();
+        this.currentStep=step; this.updateStepDisplay(step);
+    },
+    prevStep(step) { this.currentStep=step; this.updateStepDisplay(step); },
+
+    saveToStorage() { try{ localStorage.setItem('wiespl_ot_configs',JSON.stringify(this.otConfigs)); }catch(e){} },
+    loadFromStorage() { try{ const s=localStorage.getItem('wiespl_ot_configs'); if(s) this.otConfigs=JSON.parse(s); }catch(e){} }
+};
+
+// ═══════════════════════════════════════════
+// CRM LOGIC (Dashboard + Enquiries)
+// ═══════════════════════════════════════════
+const DEMO_USER = 'admin', DEMO_PASS = 'wiespl2024';
+let enquiries = JSON.parse(localStorage.getItem('wiespl_simple_enquiries')) || [];
+
+const loginScreen = document.getElementById('loginScreen');
+const appContainer = document.getElementById('appContainer');
+
+document.getElementById('loginButton').addEventListener('click', () => {
+    if(document.getElementById('loginUsername').value.trim()===DEMO_USER && document.getElementById('loginPassword').value.trim()===DEMO_PASS) {
+        loginScreen.style.display='none'; appContainer.classList.add('active'); renderEnquiries(); QuotationApp.init();
+    } else { document.getElementById('loginError').style.display='block'; }
+});
+
+document.getElementById('logoutBtn').addEventListener('click',()=>{
+    appContainer.classList.remove('active'); loginScreen.style.display='block';
+});
+
+function switchPage(page) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(`page-${page}`).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+    const titles = {dashboard:'Dashboard', enquiries:'Enquiries', quotation:'OT Quotation Builder'};
+    document.getElementById('pageTitle').textContent = titles[page] || page;
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', (e) => switchPage(item.dataset.page));
+});
+document.getElementById('newEnquiryBtn').addEventListener('click',()=>switchPage('enquiries'));
+document.getElementById('newQuotationBtn').addEventListener('click',()=>switchPage('quotation'));
+
+function renderEnquiries() {
+    const dash = document.querySelector('#dashboardTable tbody');
+    const enq = document.querySelector('#enquiriesTable tbody');
+    if(!dash||!enq) return;
+    const recent = [...enquiries].slice(-5).reverse();
+    dash.innerHTML = recent.map(e=>`<tr><td>${e.hospital}</td><td>${e.city}</td><td>${e.otType}</td><td>₹${Number(e.value).toLocaleString('en-IN')}</td><td><span class="badge">${e.stage}</span></td></tr>`).join('')||'<tr><td colspan="5">No enquiries</td></tr>';
+    enq.innerHTML = enquiries.map(e=>`<tr><td>${e.hospital}</td><td>${e.city}</td><td>${e.contact}</td><td>${e.otType}</td><td>₹${Number(e.value).toLocaleString('en-IN')}</td><td>${e.stage}</td></tr>`).join('')||'<tr><td colspan="6">No enquiries</td></tr>';
+    document.getElementById('totalCount').textContent = enquiries.length;
+    document.getElementById('activeCount').textContent = enquiries.filter(e=>e.stage!=='Lost'&&e.stage!=='Won').length;
+}
+
+document.getElementById('saveEnquiryBtn').addEventListener('click',()=>{
+    const h = document.getElementById('eHospital').value.trim(), c = document.getElementById('eCity').value.trim();
+    if(!h||!c) return alert('Hospital and city required');
+    enquiries.push({id:Date.now(),hospital:h,city:c,contact:document.getElementById('eContact').value.trim()||'N/A',otType:document.getElementById('eOtType').value,value:parseFloat(document.getElementById('eValue').value)||0,stage:document.getElementById('eStage').value,date:new Date().toISOString().split('T')[0]});
+    localStorage.setItem('wiespl_simple_enquiries',JSON.stringify(enquiries));
+    renderEnquiries(); switchPage('enquiries');
+    ['eHospital','eCity','eContact','eValue'].forEach(id=>document.getElementById(id).value='');
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    renderEnquiries();
+    QuotationApp.init();
+});
+
+// Global reference
+window.QuotationApp = QuotationApp;
+</script>
+</body>
+</html>

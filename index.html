@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WIESPL · CRM & OT Quotation System</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><i class="fas fa-hospital-user"></i></div>
+    <h1>WIESPL</h1>
+    <p class="login-sub">OT Quotation & CRM Platform</p>
+    <div class="login-field"><label>Username</label><input type="text" id="loginUsername" placeholder="Enter username" autocomplete="off"></div>
+    <div class="login-field"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter password"></div>
+    <button id="loginBtn" class="login-btn"><span>Sign In</span><i class="fas fa-arrow-right"></i></button>
+    <div id="loginError" class="login-error" style="display:none"><i class="fas fa-exclamation-circle"></i> Invalid credentials</div>
+    <div class="login-hint">Demo: admin / wiespl123 &nbsp;|&nbsp; sales / sales123</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appContainer" class="app-container" style="display:none">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon"><i class="fas fa-crosshairs"></i></div><span>WIESPL</span></div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-user">
+      <div class="user-pill">
+        <div class="user-av" id="userAvatar">A</div>
+        <div class="user-info"><div class="user-name" id="userName">Admin</div><div class="user-role" id="userRole">Administrator</div></div>
+      </div>
+      <button id="logoutBtn" class="logout-btn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-area">
+    <header class="topbar">
+      <h2 id="pageTitle">Dashboard</h2>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </header>
+    <div class="content" id="mainContent"></div>
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toastZone" class="toast-zone"></div>
+
+<!-- PRINT AREA -->
+<div id="printArea" style="display:none"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
