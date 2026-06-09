@@ -5,7 +5,7 @@
 // ============================================================
 
 // ========== API CONFIGURATION ==========
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://crmsoftwarewiespl.onrender.com/api';
 let authToken = localStorage.getItem('token');
 let currentUser = null;
 
